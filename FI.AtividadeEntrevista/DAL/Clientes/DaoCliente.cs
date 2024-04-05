@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,7 +21,7 @@ namespace FI.AtividadeEntrevista.DAL
         internal long Incluir(DML.Cliente cliente)
         {
             List<System.Data.SqlClient.SqlParameter> parametros = new List<System.Data.SqlClient.SqlParameter>();
-            
+
             parametros.Add(new System.Data.SqlClient.SqlParameter("Nome", cliente.Nome));
             parametros.Add(new System.Data.SqlClient.SqlParameter("Sobrenome", cliente.Sobrenome));
             parametros.Add(new System.Data.SqlClient.SqlParameter("Nacionalidade", cliente.Nacionalidade));
@@ -30,6 +31,7 @@ namespace FI.AtividadeEntrevista.DAL
             parametros.Add(new System.Data.SqlClient.SqlParameter("Logradouro", cliente.Logradouro));
             parametros.Add(new System.Data.SqlClient.SqlParameter("Email", cliente.Email));
             parametros.Add(new System.Data.SqlClient.SqlParameter("Telefone", cliente.Telefone));
+            parametros.Add(new System.Data.SqlClient.SqlParameter("CPF", cliente.CPF));
 
             DataSet ds = base.Consultar("FI_SP_IncClienteV2", parametros);
             long ret = 0;
@@ -63,6 +65,49 @@ namespace FI.AtividadeEntrevista.DAL
             DataSet ds = base.Consultar("FI_SP_VerificaCliente", parametros);
 
             return ds.Tables[0].Rows.Count > 0;
+        }
+
+        internal bool ValidarPadraoVerificador(string CPF)
+        {
+            //Formata CPF
+            CPF = CPF.Where(char.IsDigit).ToString();
+
+            if (CPF.Length != 11)
+            {
+                return false;
+            }
+
+            //Valida Primeiro Dígito Verificador
+            int soma = 0;
+            for (int i = 0; i < 9; i++)
+            {
+                soma += int.Parse(CPF[i].ToString()) * (10 - i);
+            }
+            int resto = soma % 11;
+            int digitoVerificador1 = resto < 2 ? 0 : 11 - resto;
+
+            
+            if (int.Parse(CPF[9].ToString()) != digitoVerificador1)
+            {
+                return false;
+            }
+
+            //Valida Segundo Dígito Verificador
+            soma = 0;
+            for (int i = 0; i < 10; i++)
+            {
+                soma += int.Parse(CPF[i].ToString()) * (11 - i);
+            }
+            resto = soma % 11;
+            int digitoVerificador2 = resto < 2 ? 0 : 11 - resto;
+
+            if (int.Parse(CPF[10].ToString()) != digitoVerificador2)
+            {
+                return false;
+            }
+
+            return true;
+
         }
 
         internal List<Cliente> Pesquisa(int iniciarEm, int quantidade, string campoOrdenacao, bool crescente, out int qtd)
@@ -119,6 +164,7 @@ namespace FI.AtividadeEntrevista.DAL
             parametros.Add(new System.Data.SqlClient.SqlParameter("Logradouro", cliente.Logradouro));
             parametros.Add(new System.Data.SqlClient.SqlParameter("Email", cliente.Email));
             parametros.Add(new System.Data.SqlClient.SqlParameter("Telefone", cliente.Telefone));
+            parametros.Add(new System.Data.SqlClient.SqlParameter("CPF", cliente.CPF));
             parametros.Add(new System.Data.SqlClient.SqlParameter("ID", cliente.Id));
 
             base.Executar("FI_SP_AltCliente", parametros);
@@ -156,6 +202,7 @@ namespace FI.AtividadeEntrevista.DAL
                     cli.Nome = row.Field<string>("Nome");
                     cli.Sobrenome = row.Field<string>("Sobrenome");
                     cli.Telefone = row.Field<string>("Telefone");
+                    cli.CPF = row.Field<string>("CPF");
                     lista.Add(cli);
                 }
             }

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using FI.AtividadeEntrevista.DML;
+using System.Data.SqlClient;
 
 namespace WebAtividadeEntrevista.Controllers
 {
@@ -26,34 +27,44 @@ namespace WebAtividadeEntrevista.Controllers
         public JsonResult Incluir(ClienteModel model)
         {
             BoCliente bo = new BoCliente();
-            
-            if (!this.ModelState.IsValid)
-            {
-                List<string> erros = (from item in ModelState.Values
-                                      from error in item.Errors
-                                      select error.ErrorMessage).ToList();
 
-                Response.StatusCode = 400;
-                return Json(string.Join(Environment.NewLine, erros));
+            var cpfValido = bo.ValidarPadraoVerificador(model.CPF);
+            var cpfDuplicado = bo.VerificarExistencia(model.CPF);
+
+            if (cpfValido && !cpfDuplicado)
+            {
+                if (!this.ModelState.IsValid)
+                {
+                    List<string> erros = (from item in ModelState.Values
+                                          from error in item.Errors
+                                          select error.ErrorMessage).ToList();
+
+                    Response.StatusCode = 400;
+                    return Json(string.Join(Environment.NewLine, erros));
+                }
+                else
+                {
+
+                    model.Id = bo.Incluir(new Cliente()
+                    {
+                        CEP = model.CEP,
+                        Cidade = model.Cidade,
+                        Email = model.Email,
+                        Estado = model.Estado,
+                        Logradouro = model.Logradouro,
+                        Nacionalidade = model.Nacionalidade,
+                        Nome = model.Nome,
+                        Sobrenome = model.Sobrenome,
+                        Telefone = model.Telefone,
+                        CPF = model.CPF
+                    });
+                    return Json("Cadastro efetuado com sucesso");
+                }
             }
             else
             {
-                
-                model.Id = bo.Incluir(new Cliente()
-                {                    
-                    CEP = model.CEP,
-                    Cidade = model.Cidade,
-                    Email = model.Email,
-                    Estado = model.Estado,
-                    Logradouro = model.Logradouro,
-                    Nacionalidade = model.Nacionalidade,
-                    Nome = model.Nome,
-                    Sobrenome = model.Sobrenome,
-                    Telefone = model.Telefone
-                });
-
-           
-                return Json("Cadastro efetuado com sucesso");
+                Response.StatusCode = 400;
+                return Json(cpfDuplicado ? "O CPF inserido já existe. Por favor, insira um CPF diferente." : "O CPF inserido é inválido. Por favor, insira um CPF válido.");
             }
         }
 
@@ -61,7 +72,10 @@ namespace WebAtividadeEntrevista.Controllers
         public JsonResult Alterar(ClienteModel model)
         {
             BoCliente bo = new BoCliente();
-       
+
+            var cpfValido = bo.ValidarPadraoVerificador(model.CPF);
+            var cpfDuplicado = bo.VerificarExistencia(model.CPF);
+
             if (!this.ModelState.IsValid)
             {
                 List<string> erros = (from item in ModelState.Values
@@ -71,7 +85,7 @@ namespace WebAtividadeEntrevista.Controllers
                 Response.StatusCode = 400;
                 return Json(string.Join(Environment.NewLine, erros));
             }
-            else
+            else if (cpfValido && !cpfDuplicado)
             {
                 bo.Alterar(new Cliente()
                 {
@@ -84,12 +98,25 @@ namespace WebAtividadeEntrevista.Controllers
                     Nacionalidade = model.Nacionalidade,
                     Nome = model.Nome,
                     Sobrenome = model.Sobrenome,
-                    Telefone = model.Telefone
+                    Telefone = model.Telefone,
+                    CPF = model.CPF
                 });
-                               
+
                 return Json("Cadastro alterado com sucesso");
             }
+            else
+            {
+                Response.StatusCode = 400;
+                return Json(cpfDuplicado ? "O CPF inserido já existe. Por favor, insira um CPF diferente." : "O CPF inserido é inválido. Por favor, insira um CPF válido.");
+            }
+
         }
+
+
+
+
+
+
 
         [HttpGet]
         public ActionResult Alterar(long id)
@@ -111,10 +138,11 @@ namespace WebAtividadeEntrevista.Controllers
                     Nacionalidade = cliente.Nacionalidade,
                     Nome = cliente.Nome,
                     Sobrenome = cliente.Sobrenome,
-                    Telefone = cliente.Telefone
+                    Telefone = cliente.Telefone,
+                    CPF = cliente.CPF
                 };
 
-            
+
             }
 
             return View(model);

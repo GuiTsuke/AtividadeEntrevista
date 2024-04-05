@@ -14,11 +14,15 @@ $(document).ready(function () {
             fields: {
                 Nome: {
                     title: 'Nome',
-                    width: '50%'
+                    width: '35%'
                 },
                 Email: {
                     title: 'Email',
-                    width: '35%'
+                    width: '30%'
+                },
+                CPF: {
+                    title: 'CPF',
+                    width: '30%'
                 },
                 Alterar: {
                     title: '',
