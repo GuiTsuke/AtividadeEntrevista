@@ -41,9 +41,9 @@ namespace FI.AtividadeEntrevista.DAL
         }
 
         /// <summary>
-        /// Inclui um novo cliente
+        /// Consulta um Cliente por ID
         /// </summary>
-        /// <param name="cliente">Objeto de cliente</param>
+        /// <param name="Id">Código do cliente</param>
         internal DML.Cliente Consultar(long Id)
         {
             List<System.Data.SqlClient.SqlParameter> parametros = new List<System.Data.SqlClient.SqlParameter>();
@@ -56,21 +56,30 @@ namespace FI.AtividadeEntrevista.DAL
             return cli.FirstOrDefault();
         }
 
-        internal bool VerificarExistencia(string CPF)
+        /// <summary>
+        /// Verifica se já existe um Cliente com o CPF
+        /// </summary>
+        /// <param name="CPF">CPF do cliente</param>
+        internal bool VerificarExistencia(string CPF, long id)
         {
             List<System.Data.SqlClient.SqlParameter> parametros = new List<System.Data.SqlClient.SqlParameter>();
 
             parametros.Add(new System.Data.SqlClient.SqlParameter("CPF", CPF));
+            parametros.Add(new System.Data.SqlClient.SqlParameter("ID", id));
 
             DataSet ds = base.Consultar("FI_SP_VerificaCliente", parametros);
 
             return ds.Tables[0].Rows.Count > 0;
         }
 
+        /// <summary>
+        /// Verifica se o CPF do cliente é válido a partir do padrão verificador 
+        /// </summary>
+        /// <param name="CPF">CPF do cliente</param>
         internal bool ValidarPadraoVerificador(string CPF)
         {
             //Formata CPF
-            CPF = CPF.Where(char.IsDigit).ToString();
+            CPF = new string(CPF.Where(char.IsDigit).ToArray());
 
             if (CPF.Length != 11)
             {
@@ -86,7 +95,7 @@ namespace FI.AtividadeEntrevista.DAL
             int resto = soma % 11;
             int digitoVerificador1 = resto < 2 ? 0 : 11 - resto;
 
-            
+
             if (int.Parse(CPF[9].ToString()) != digitoVerificador1)
             {
                 return false;
@@ -106,7 +115,22 @@ namespace FI.AtividadeEntrevista.DAL
                 return false;
             }
 
-            return true;
+
+            //Invalida os CPFs com números sequenciais que passam no algoritmo. 
+            //Ex.: 111.111.111-11 ou 444.444.444-44
+            var listaCPFsInvalidos = new List<string>();
+            var cpfInválido = "";
+            for (int i = 0; i < 10; i++)
+            {
+                for (int j = 0; j < 11; j++)
+                {
+                    cpfInválido += i;
+                }
+                listaCPFsInvalidos.Add(cpfInválido);
+                cpfInválido = "";
+            }
+
+            return !(listaCPFsInvalidos.Any(cpf => cpf.Equals(CPF)));
 
         }
 

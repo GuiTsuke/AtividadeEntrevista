@@ -15,7 +15,7 @@ $(document).ready(function () {
 
     $('#formCadastro').submit(function (e) {
         e.preventDefault();
-        
+
         $.ajax({
             url: urlPost,
             method: "POST",
@@ -32,21 +32,26 @@ $(document).ready(function () {
                 "CPF": $(this).find("#CPF").val()
             },
             error:
-            function (r) {
-                if (r.status == 400)
-                    ModalDialog("Ocorreu um erro", r.responseJSON);
-                else if (r.status == 500)
-                    ModalDialog("Ocorreu um erro", "Ocorreu um erro interno no servidor.");
-            },
+                function (r) {
+                    if (r.status == 400)
+                        ModalDialog("Ocorreu um erro", r.responseJSON);
+                    else if (r.status == 500)
+                        ModalDialog("Ocorreu um erro", "Ocorreu um erro interno no servidor.");
+                },
             success:
-            function (r) {
-                ModalDialog("Sucesso!", r)
-                $("#formCadastro")[0].reset();                                
-                window.location.href = urlRetorno;
-            }
+                function (r) {
+                    if (typeof r.idCliente === 'undefined') {
+                        ModalDialog("Sucesso!", r);
+                        $("#formCadastro")[0].reset();
+                        window.location.href = urlRetorno;
+                    } else {
+                        Cadastrarbeneficiario(r.idCliente);
+                    }
+
+                }
         });
     })
-    
+
 })
 
 function ModalDialog(titulo, texto) {
@@ -72,3 +77,24 @@ function ModalDialog(titulo, texto) {
     $('body').append(texto);
     $('#' + random).modal('show');
 }
+
+function Cadastrarbeneficiario(idCliente) {
+    $.ajax({
+        url: urlExcluirBeneficiario,
+        method: 'POST',
+        data: {
+            "idCliente": idCliente
+        },
+        success: function (r) {
+            ModalDialog("Sucesso!", r);
+            $("#formCadastro")[0].reset();
+            window.location.href = urlRetorno;
+        },
+        error: function (r) {
+            if (r.status == 400)
+                ModalDialog("Ocorreu um erro", r.responseJSON);
+            else if (r.status == 500)
+                ModalDialog("Ocorreu um erro", "Ocorreu um erro interno no servidor");
+        }
+    });
+};

@@ -17,9 +17,9 @@ namespace WebAtividadeEntrevista.Controllers
             return View();
         }
 
-
         public ActionResult Incluir()
         {
+            Session.Clear();
             return View();
         }
 
@@ -29,38 +29,43 @@ namespace WebAtividadeEntrevista.Controllers
             BoCliente bo = new BoCliente();
 
             var cpfValido = bo.ValidarPadraoVerificador(model.CPF);
-            var cpfDuplicado = bo.VerificarExistencia(model.CPF);
+            var cpfDuplicado = bo.VerificarExistencia(model.CPF, 0);
 
-            if (cpfValido && !cpfDuplicado)
+            if (!this.ModelState.IsValid)
             {
-                if (!this.ModelState.IsValid)
-                {
-                    List<string> erros = (from item in ModelState.Values
-                                          from error in item.Errors
-                                          select error.ErrorMessage).ToList();
+                List<string> erros = (from item in ModelState.Values
+                                      from error in item.Errors
+                                      select error.ErrorMessage).ToList();
 
-                    Response.StatusCode = 400;
-                    return Json(string.Join(Environment.NewLine, erros));
-                }
-                else
-                {
-
-                    model.Id = bo.Incluir(new Cliente()
-                    {
-                        CEP = model.CEP,
-                        Cidade = model.Cidade,
-                        Email = model.Email,
-                        Estado = model.Estado,
-                        Logradouro = model.Logradouro,
-                        Nacionalidade = model.Nacionalidade,
-                        Nome = model.Nome,
-                        Sobrenome = model.Sobrenome,
-                        Telefone = model.Telefone,
-                        CPF = model.CPF
-                    });
-                    return Json("Cadastro efetuado com sucesso");
-                }
+                Response.StatusCode = 400;
+                return Json(string.Join(Environment.NewLine, erros));
             }
+            else if (cpfValido && !cpfDuplicado)
+            {
+
+                model.Id = bo.Incluir(new Cliente()
+                {
+                    CEP = model.CEP,
+                    Cidade = model.Cidade,
+                    Email = model.Email,
+                    Estado = model.Estado,
+                    Logradouro = model.Logradouro,
+                    Nacionalidade = model.Nacionalidade,
+                    Nome = model.Nome,
+                    Sobrenome = model.Sobrenome,
+                    Telefone = model.Telefone,
+                    CPF = model.CPF
+                });
+
+                if (!(Session["Beneficiarios"] == null))
+                {
+                    var dados = new { idCliente = model.Id };
+                    return Json(dados, JsonRequestBehavior.AllowGet);
+                }
+
+                return Json("Cadastro efetuado com sucesso");
+            }
+
             else
             {
                 Response.StatusCode = 400;
@@ -74,7 +79,7 @@ namespace WebAtividadeEntrevista.Controllers
             BoCliente bo = new BoCliente();
 
             var cpfValido = bo.ValidarPadraoVerificador(model.CPF);
-            var cpfDuplicado = bo.VerificarExistencia(model.CPF);
+            var cpfDuplicado = bo.VerificarExistencia(model.CPF, model.Id);
 
             if (!this.ModelState.IsValid)
             {
@@ -102,6 +107,12 @@ namespace WebAtividadeEntrevista.Controllers
                     CPF = model.CPF
                 });
 
+                if (!(Session["Beneficiarios"] == null))
+                {
+                    var dados = new { idCliente = model.Id };
+                    return Json(dados, JsonRequestBehavior.AllowGet);
+                }
+
                 return Json("Cadastro alterado com sucesso");
             }
             else
@@ -112,15 +123,10 @@ namespace WebAtividadeEntrevista.Controllers
 
         }
 
-
-
-
-
-
-
         [HttpGet]
         public ActionResult Alterar(long id)
         {
+            Session.Clear();
             BoCliente bo = new BoCliente();
             Cliente cliente = bo.Consultar(id);
             Models.ClienteModel model = null;

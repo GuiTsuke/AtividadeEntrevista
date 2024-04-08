@@ -69,18 +69,18 @@ namespace FI.AtividadeEntrevista.BLL
         }
 
         /// <summary>
-        /// VerificaExistencia
+        /// Verifica Existencia de CPF do cliente duplicado 
         /// </summary>
         /// <param name="CPF"></param>
         /// <returns></returns>
-        public bool VerificarExistencia(string CPF)
+        public bool VerificarExistencia(string CPF, long id)
         {
             DAL.DaoCliente cli = new DAL.DaoCliente();
-            return cli.VerificarExistencia(CPF);
+            return cli.VerificarExistencia(CPF, id);
         }
 
         /// <summary>
-        /// VerificaExistencia
+        /// Verifica validade do CPF pelo padrão verificador
         /// </summary>
         /// <param name="CPF"></param>
         /// <returns></returns>

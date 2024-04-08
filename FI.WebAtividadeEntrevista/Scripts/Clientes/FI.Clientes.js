@@ -17,22 +17,26 @@ $(document).ready(function () {
                 "Telefone": $(this).find("#Telefone").val(),
                 "CPF": $(this).find("#CPF").val()
             },
-            error:
-            function (r) {
+            error: function (r) {
                 if (r.status == 400)
                     ModalDialog("Ocorreu um erro", r.responseJSON);
                 else if (r.status == 500)
                     ModalDialog("Ocorreu um erro", "Ocorreu um erro interno no servidor");
             },
-            success:
-            function (r) {
-                ModalDialog("Sucesso!", r)
-                $("#formCadastro")[0].reset();
+            success: function (r) {
+                if (typeof r.idCliente === 'undefined') {
+                    ModalDialog("Sucesso!", r);
+                    $("#formCadastro")[0].reset();
+                } else {
+                    Cadastrarbeneficiario(r.idCliente);
+                }
             }
         });
-    })
-    
-})
+    });
+
+});
+
+
 
 function ModalDialog(titulo, texto) {
     var random = Math.random().toString().replace('.', '');
@@ -56,4 +60,26 @@ function ModalDialog(titulo, texto) {
 
     $('body').append(texto);
     $('#' + random).modal('show');
-}
+};
+
+
+function Cadastrarbeneficiario(idCliente) {
+    $.ajax({
+        url: urlSalvarBeneficiario,
+        method: 'POST',
+        data: {
+            "idCliente": idCliente
+        },
+        success: function (r) {
+            ModalDialog("Sucesso!", r);
+            $("#formCadastro")[0].reset();
+            window.location.href = urlPost;
+        },
+        error: function (r) {
+            if (r.status == 400)
+                ModalDialog("Ocorreu um erro", r.responseJSON);
+            else if (r.status == 500)
+                ModalDialog("Ocorreu um erro", "Ocorreu um erro interno no servidor");
+        }
+    });
+};
